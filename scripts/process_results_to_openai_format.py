@@ -1,3 +1,5 @@
+from scripts.identify_assitant_with_AI import identify_assistant_speaker
+
 def process_audio_to_openai_training_format(original_list):
     """
     Processes a list of dictionaries into a format suitable for training with OpenAI.
@@ -26,26 +28,42 @@ def process_audio_to_openai_training_format(original_list):
     for dic in original_list
     ]
 
+    print(filtered_list)
+
+    # Extract the Assistant and user with the AI
+    try:
+        assistant_speaker_AI = identify_assistant_speaker(filtered_list)
+
+        # Extract the speakers from the dictionary
+        speakers = list(set([(dic['speaker']).lower() for dic in filtered_list]))
+
+        if assistant_speaker_AI.lower() in speakers:
+            # Define the assistant speaker
+            assistant_speaker = assistant_speaker_AI
+        else: 
+            assistant_speaker = None   
+
+        print('The assistant speaker is:', assistant_speaker)
+    except Exception as e:
+        assistant_speaker = None
+
+    # Verify if the there are an assistant speaker
+    if not assistant_speaker:
+        # Count the frequency of each 'speaker' value
+        speaker_frequency = {}
+        for dic in filtered_list:
+            if dic['speaker'] in speaker_frequency:
+                speaker_frequency[dic['speaker']] += 1
+            else:
+                speaker_frequency[dic['speaker']] = 1
 
 
-
-    # Count the frequency of each 'speaker' value
-    speaker_frequency = {}
-    for dic in filtered_list:
-        if dic['speaker'] in speaker_frequency:
-            speaker_frequency[dic['speaker']] += 1
-        else:
-            speaker_frequency[dic['speaker']] = 1
-
-
-    # Determine the most and least frequent 'speaker'
-    most_frequent_speaker = max(speaker_frequency, key=speaker_frequency.get)
-    least_frequent_speaker = min(speaker_frequency, key=speaker_frequency.get)
-
+        # Determine the most and least frequent 'speaker'
+        assistant_speaker = max(speaker_frequency, key=speaker_frequency.get)
 
     # Format the list with new keys and values
     formatted_list = [
-        {'content': dic['text'], 'role': 'assistant' if dic['speaker'] == most_frequent_speaker else 'user'}
+        {'content': dic['text'], 'role': 'user' if dic['speaker'] == assistant_speaker else 'assistant'}
         for dic in filtered_list
     ]
 
